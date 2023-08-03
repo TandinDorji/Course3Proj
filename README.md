@@ -11,5 +11,6 @@ The R script in the file `run_analysis.R` does the following:
 3.  Read feature names and add to `df`
 4.  Select only the `features` related to `mean`, `median` and `sd` into a new data frame, `df2`
 5.  Read participant labels and add to `df2`
+6. Exporting `df2` into a `txt` file.
 
 Dataset required for this project, including train, test and subject labels are all stored in the folder `data`.

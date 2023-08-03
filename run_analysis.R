@@ -38,4 +38,8 @@ Participant.Label <- c(train_participant_label, test_participant_label)
 table(Participant.Label)
 
 df2 <- cbind(df2, Participant.Label)
-View(df2)
+# View(df2)
+
+
+# export tidy data frame into a txt file
+write.table(x = df2, file = "activity.txt", row.names = FALSE)
