@@ -1,45 +1,72 @@
+# read activity labels and feature names
+features <- read.table("data/features.txt")
+str(features)
+activity_labels <- read.table("data/activity_labels.txt")
+str(activity_labels)
+
+
+
+
 # read train and test data into data frames
-X_train <- read.fwf("data/train/X_train.txt", widths = 8977, sep = "")
-X_test <- read.fwf("data/test/X_test.txt", widths = 8977, sep = "")
-dim(X_train)
-dim(X_test)
+train_X <- read.table("data/train/X_train.txt")
+train_y <- read.table("data/train/y_train.txt")
+train_subject <- read.table("data/train/subject_train.txt")
 
 
-# combine train and test dataset into single df
-df <- rbind(X_train, X_test)
-dim(df)
-
-
-# read feature names and add to df
-library(stringr)
-feature_names <- as.character(readLines(con = "data/features.txt"))
-feature_names <- str_remove_all(feature_names, "^[0-9]*\\s")
-names(df) <- feature_names
-indicator <- str_detect(names(df), pattern = "mean") + 
-    str_detect(names(df), pattern = "Mean") + 
-    str_detect(names(df), pattern = "std")
-
-df2 <- df[, which(indicator == 1)]
-dim(df2)
-names(df2)
+test_X <- read.table("data/test/X_test.txt")
+test_y <- read.table("data/test/y_test.txt")
+test_subject <- read.table("data/test/subject_test.txt")
 
 
 
 
-# read participant labels
-
-test_participant_label <- as.numeric(readLines(con = "data/test/subject_test.txt"))
-unique(test_participant_label)
-
-train_participant_label <- as.numeric(readLines(con = "data/train/subject_train.txt"))
-unique(train_participant_label)
-
-Participant.Label <- c(train_participant_label, test_participant_label)
-table(Participant.Label)
-
-df2 <- cbind(df2, Participant.Label)
-# View(df2)
+# combine train and test data with subject and activity label
+activity <- rbind(
+        cbind(train_subject, train_y, train_X),
+        cbind(test_subject, test_y, test_X))
 
 
-# export tidy data frame into a txt file
-write.table(x = df2, file = "activity.txt", row.names = FALSE)
+# rename variable names
+names(activity) <- c("Subject.ID", "Activity", features$V2)
+length(unique(activity$Subject.ID))
+table(activity$Activity.ID)
+
+
+# recode activity labels
+activity$Activity.ID[activity$Activity.ID == 1] <- "WALKING"
+activity$Activity.ID[activity$Activity.ID == 2] <- "WALKING_UPSTAIRS"
+activity$Activity.ID[activity$Activity.ID == 3] <- "WALKING_DOWNSTAIRS"
+activity$Activity.ID[activity$Activity.ID == 4] <- "SITTING"
+activity$Activity.ID[activity$Activity.ID == 5] <- "STANDING"
+activity$Activity.ID[activity$Activity.ID == 6] <- "LAYING"
+activity$Activity.ID <- as.factor(activity$Activity.ID)
+
+# check recoding
+unique(activity$Activity.ID)
+
+
+# remove used objects that are no longer required
+rm(list = setdiff(ls(), "activity"))
+
+
+
+
+
+# Extracts only the measurements on the mean and standard deviation 
+indicator <- grepl(pattern = "Subject.ID|Activity|mean|std",
+                   x = names(activity),
+                   ignore.case = TRUE)
+names(activity)[indicator]
+activity <- activity[, indicator]
+
+
+
+
+# average of each variable for each activity and each subject
+avg <- with(activity, aggregate(activity[3:88], by = list(Subject.ID, Activity), FUN = mean))
+names(avg)[1:2] <- c("Subject.ID", "Activity")
+table(avg$Activity, avg$Subject.ID)
+
+
+# export tidy data frame into a .txt file
+write.table(x = activity, file = "activity_tidy.txt", row.names = FALSE)
